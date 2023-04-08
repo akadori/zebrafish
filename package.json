@@ -1,6 +1,11 @@
 {
+	"name": "zebrafish",
+	"version": "0.0.1",
+	"main": "main.js",
 	"dependencies": {
-		"genealogist": "^0.0.5",
+		"genealogist": "^0.0.5"
+	},
+	"devDependencies": {
 		"typescript": "^5.0.4"
 	}
 }
