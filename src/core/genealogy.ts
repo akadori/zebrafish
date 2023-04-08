@@ -3,94 +3,94 @@ export type GenealogyMap = Map<string, Set<string>>;
 export class Genealogy {
 	private genealogy: Map<string, Set<string>> = new Map;
 	private ignorePatterns: RegExp | undefined;
-	constructor(entryPoint: string, ignorePatterns?: string[]) {
-		this.genealogy = this.createReversedDependencyGraph(
+	constructor(entryPoint: string, ignorePatterns?: RegExp[]) {
+		this.ignorePatterns = ignorePatterns?.length ? new RegExp(ignorePatterns.join("|")) : undefined;
+		this.createReversedDependencyGraph(
 			entryPoint,
-			ignorePatterns,
 		);
-		if (ignorePatterns) {
-			this.ignorePatterns = new RegExp(
-				ignorePatterns.map((pattern) => `(${pattern})`).join("|"),
-			);
+	}
+
+	private recordAncestorsGraph(module: NodeModule, seen: Set<string> = new Set()): void {
+		const { children, filename: parent } = module;
+		if (seen.has(parent)) {
+			return;
+		}
+		seen.add(parent);
+		children.forEach((child) => {
+			const { filename: childFilename } = child;
+			if (this.ignorePatterns?.test(childFilename)) {
+				return;
+			}
+			const ancestors = this.genealogy.get(childFilename) || new Set();
+			ancestors.add(parent);
+			this.genealogy.set(childFilename, ancestors);
+			this.recordAncestorsGraph(child, seen);
+		});
+	}
+
+	private eraseDescendantsGraph(module: NodeModule, seen: Set<string> = new Set()): void {
+		const { children, filename: parent } = module;
+		if (seen.has(parent)) {
+			return;
+		}
+		seen.add(parent);
+		children.forEach((child) => {
+			const { filename: childFilename } = child;
+			const graph = this.genealogy.get(childFilename);
+			if (graph) {
+				graph.delete(parent);
+			}
+		});
+	}
+
+	private removeAncestorsCache(path: string, seen: Set<string> = new Set()): void {
+		if(seen.has(path)) {
+			return;
+		}
+		seen.add(path);
+		const ancestors = this.genealogy.get(path);
+		if (ancestors) {
+			for (const ancestor of ancestors) {
+				require.cache[ancestor] = undefined;
+				this.removeAncestorsCache(ancestor, seen);
+			}
 		}
 	}
-	createReversedDependencyGraph(
+
+	private createReversedDependencyGraph(
 		entryPoint: string,
-		ignorePatterns?: string[],
-	): Map<string, Set<string>>  {
-		const genealogy: GenealogyMap = new Map();
-		const absolutePath = require.resolve(entryPoint);
-		const entryModule = require.cache[absolutePath];
+	): void  {
+		const entryModule = require.cache[require.resolve(entryPoint)];
 		if (!entryModule) {
 			throw new Error(`Entry module ${entryPoint} not found`);
 		}
-		let queue = [entryModule];
-		while (queue.length) {
-			const [current, ...rest] = queue;
-			queue = rest;
-			const { children, filename: parent } = current;
-			// if (ignorePatterns?.some((pattern) => parent.match(pattern))) {
-			// 	continue;
-			// }
-			children.forEach((child) => {
-
-				const { filename: childFilename } = child;
-				if (ignorePatterns?.some((pattern) => childFilename.match(pattern))) {
-					return;
-				}
-				const ancestors = genealogy.get(childFilename) || new Set();
-				ancestors.add(parent);
-				genealogy.set(childFilename, ancestors);
-				queue.push(child);
-			});
-		}
-		return genealogy;
+		this.recordAncestorsGraph(entryModule);
 	}
+	// キャッシュは祖先方向に、依存関係は子孫方向に削除する
 	public onFilesChanged (changedFiles: string[]): () => void {
-		let queue = [...changedFiles];
-		while (queue.length) {
-			const [current, ...rest] = queue;
-			queue = rest;
-			const absolutePath = require.resolve(current);
-			if (this.genealogy.has(absolutePath)) {
-				const ancestors = this.genealogy.get(absolutePath) || new Set();
-				for (const ancestor of ancestors) {
-					queue.push(ancestor);
-				}
+		const changedFilesPaths = changedFiles.map((changedFile) => require.resolve(changedFile));
+		for (const changedFilePath of changedFilesPaths) {
+			const module = require.cache[changedFilePath];
+			if (module) {
+				this.eraseDescendantsGraph(module);
 			}
-			require.cache[absolutePath] = undefined;
-			this.genealogy.delete(absolutePath);
 		}
-
+		for (const changedFilePath of changedFilesPaths) {
+			require.cache[changedFilePath] = undefined;
+			this.removeAncestorsCache(changedFilePath);
+		}
 		return () => {
 			this.updateGenealogy(changedFiles);
 		}
 	}
 
 	private updateGenealogy (entryPoints: string[]): void {
-		let queue = [...entryPoints];
-		while (queue.length) {
-			const [current, ...rest] = queue;
-			queue = rest;
-			const absolutePath = require.resolve(current);
-			const currentModule = require.cache[absolutePath];
-			if (!currentModule) {
-				throw new Error(`Module not found: ${current}`);
-			}
-			currentModule.children.forEach((child) => {
-				const filename = child.filename;
-				if (this.ignorePatterns?.test(filename)) {
-					return;
-				}
-				const ancestors = this.genealogy.get(filename) || new Set();
-				ancestors.add(absolutePath);
-				this.genealogy.set(filename, ancestors);
-				queue.push(child.filename);
-			});
+		for (const entryPoint of entryPoints) {
+			this.createReversedDependencyGraph(entryPoint);
 		}
 	}
 
-	getAncestors (absolutePath: string): string[] {
+	public getAncestors (absolutePath: string): string[] {
 		const ancestors = this.genealogy.get(absolutePath) || new Set();
 		return [...ancestors];
 	}
