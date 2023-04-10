@@ -7,10 +7,13 @@ exports.Zebrafish = void 0;
 const chokidar_1 = __importDefault(require("chokidar"));
 const genealogy_1 = require("./genealogy");
 class Zebrafish {
-    constructor(entryPoint, watchDir, ignorePatterns) {
+    constructor(entryPoint, watchDir, ignorePatterns, plugins) {
+        this.plugins = [];
         this.entryPoint = entryPoint;
         this.ignorePatterns = ignorePatterns;
         this.watcher = chokidar_1.default.watch(watchDir);
+        this.plugins = plugins || [];
+        this.plugins.forEach(plugin => { var _a; return (_a = plugin.onInit) === null || _a === void 0 ? void 0 : _a.call(plugin); });
     }
     start() {
         require(this.entryPoint);
@@ -18,9 +21,10 @@ class Zebrafish {
         this.watcher.on('all', (eventName, path) => {
             var _a;
             if (eventName === 'change') {
-                const absolutePath = require.resolve(path);
-                const onRestarted = (_a = this.genealogy) === null || _a === void 0 ? void 0 : _a.onFilesChanged([absolutePath]);
+                this.plugins.forEach(plugin => { var _a; return (_a = plugin.beforeRestart) === null || _a === void 0 ? void 0 : _a.call(plugin); });
+                const onRestarted = (_a = this.genealogy) === null || _a === void 0 ? void 0 : _a.onFilesChanged(path);
                 require(this.entryPoint);
+                this.plugins.forEach(plugin => { var _a; return (_a = plugin.onRestarted) === null || _a === void 0 ? void 0 : _a.call(plugin); });
                 onRestarted === null || onRestarted === void 0 ? void 0 : onRestarted();
             }
         });

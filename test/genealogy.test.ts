@@ -124,7 +124,7 @@ describe("genealogist2", () => {
 				bdotjs.replace("const { c } = require('./c.js');", ""),
 			);
             const didStart = genealogy.onFilesChanged(
-                [`${tempPath}/b.js`],
+                `${tempPath}/b.js`,
             )
             require(entryPoint);
             didStart();

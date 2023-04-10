@@ -1,3 +1,4 @@
+import { Plugin } from "../types";
 import http, {
 	Server,
 	ServerOptions,
@@ -9,7 +10,7 @@ import { Socket } from "net";
 
 const originalCreateServer = http.createServer;
 let sockets: Array<Socket> = [];
-let closeServer: typeof Server.prototype.close;
+export let closeServer: typeof Server.prototype.close | undefined;
 
 function isOption(arg: unknown): arg is ServerOptions {
 	return !!arg && typeof arg === "object";
@@ -50,20 +51,15 @@ function createEasyToStopServer<
 	return server;
 }
 
-export const startServer = async (entryPoint: string) => {
-	http.createServer = createEasyToStopServer;
-	await require(entryPoint);
-};
-
-export const restartServer = async (
-	entryPoint: string,
-	serverWillStart: () => void | Promise<void>,
-) => {
-	sockets.forEach((socket) => {
-		socket.destroy();
-	});
-	sockets = [];
-	closeServer();
-	await serverWillStart();
-	await require(entryPoint);
+export const serverPlugin: Plugin = {
+    onInit: () => {
+        http.createServer = createEasyToStopServer;
+    },
+    beforeRestart: () => {
+        sockets.forEach((socket) => {
+            socket.destroy();
+        });
+        sockets = [];
+        closeServer?.();
+    }
 };

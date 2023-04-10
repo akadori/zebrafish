@@ -60,26 +60,21 @@ class Genealogy {
         this.recordAncestorsGraph(entryModule);
     }
     // キャッシュは祖先方向に、依存関係は子孫方向に削除する
-    onFilesChanged(changedFiles) {
-        const changedFilesPaths = changedFiles.map((changedFile) => require.resolve(changedFile));
-        for (const changedFilePath of changedFilesPaths) {
-            const module = require.cache[changedFilePath];
-            if (module) {
-                this.eraseDescendantsGraph(module);
-            }
+    onFilesChanged(changedFile) {
+        const changedFilePath = require.resolve(changedFile);
+        const module = require.cache[changedFilePath];
+        if (module) {
+            this.eraseDescendantsGraph(module);
         }
-        for (const changedFilePath of changedFilesPaths) {
-            require.cache[changedFilePath] = undefined;
-            this.removeAncestorsCache(changedFilePath);
-        }
+        require.cache[changedFilePath] = undefined;
+        this.removeAncestorsCache(changedFilePath);
+        // キャッシュを削除した後に再度依存関係を作り直す。もう一回enrtypoint から require する必要があることをクライアントに伝えたいが名前が悪い。
         return () => {
-            this.updateGenealogy(changedFiles);
+            this.updateGenealogy(changedFile);
         };
     }
-    updateGenealogy(entryPoints) {
-        for (const entryPoint of entryPoints) {
-            this.createReversedDependencyGraph(entryPoint);
-        }
+    updateGenealogy(entryPoint) {
+        this.createReversedDependencyGraph(entryPoint);
     }
     getAncestors(absolutePath) {
         const ancestors = this.genealogy.get(absolutePath) || new Set();
