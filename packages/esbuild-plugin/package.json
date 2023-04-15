@@ -1,5 +1,5 @@
 {
-  "name": "@zebrafish/esbuild-plugin",
+  "name": "zebrafish-esbuild-plugin",
   "version": "0.0.2",
   "description": "",
   "main": "index.js",
