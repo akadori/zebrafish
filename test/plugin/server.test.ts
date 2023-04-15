@@ -1,4 +1,4 @@
-import { serverPlugin, closeServer } from "../../src/plugins/server";
+import { serverPlugin, closeServer } from "../../lib/plugins/server";
 import { describe, test, expect, beforeEach } from "vitest";
 import fetch from "node-fetch";
 

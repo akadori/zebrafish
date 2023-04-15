@@ -1,6 +1,6 @@
 import {
     Genealogy,
-} from "../src/core/genealogy";
+} from "../lib/core/genealogy";
 import { expect, describe, it, beforeAll, afterAll } from "vitest";
 import path from "path";
 import fs from "fs";
