@@ -1,7 +1,7 @@
 {
 	"name": "zebrafish",
 	"version": "0.0.2",
-	"main": "main.js",
+	"main": "./dist/main.js",
 	"dependencies": {
 		"chokidar": "^3.5.3",
 		"debug": "^4.3.4",
@@ -23,5 +23,6 @@
 	"scripts": {
 		"test": "vitest",
 		"build": "tsc"
-	}
+	},
+	"bin": "./dist/cli.js"
 }

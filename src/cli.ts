@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { ZebrafishOptions,createZebrafish } from "./main";
 import { z } from "zod";
 import { parse } from "zodiarg";
