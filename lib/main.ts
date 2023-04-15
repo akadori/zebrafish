@@ -13,4 +13,4 @@ export type ZebrafishOptions = {
 export function createZebrafish(options: ZebrafishOptions): Zebrafish {
 	const zebrafish = new Zebrafish(options.entryPoint, options.watchDir, options.ignorePatterns, options.plugins);
 	return zebrafish;
-}
+};

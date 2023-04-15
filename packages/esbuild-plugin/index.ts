@@ -1,11 +1,9 @@
 import  {
     ZebrafishOptions,
     createZebrafish,
+    serverPlugin
  } from "zebrafish"
 
- import {
-    serverPlugin
- } from "zebrafish/lib/plugins/server";
 import type { Plugin, PluginBuild } from "esbuild";
 
 
