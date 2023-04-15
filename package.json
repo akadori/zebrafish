@@ -5,7 +5,8 @@
 	"dependencies": {
 		"chokidar": "^3.5.3",
 		"debug": "^4.3.4",
-		"zod": "^3.21.4"
+		"zod": "^3.21.4",
+		"zodiarg": "^0.2.1"
 	},
 	"devDependencies": {
 		"@types/debug": "^4.1.7",
@@ -17,8 +18,7 @@
 		"tsx": "^3.12.6",
 		"typescript": "^5.0.4",
 		"vite": "^4.2.1",
-		"vitest": "^0.29.8",
-		"zodiarg": "^0.2.1"
+		"vitest": "^0.29.8"
 	},
 	"scripts": {
 		"test": "vitest",

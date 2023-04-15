@@ -10,6 +10,9 @@ dependencies:
   zod:
     specifier: ^3.21.4
     version: 3.21.4
+  zodiarg:
+    specifier: ^0.2.1
+    version: 0.2.1(zod@3.21.4)
 
 devDependencies:
   '@types/debug':
@@ -42,9 +45,6 @@ devDependencies:
   vitest:
     specifier: ^0.29.8
     version: 0.29.8
-  zodiarg:
-    specifier: ^0.2.1
-    version: 0.2.1(zod@3.21.4)
 
 packages:
 
@@ -1467,6 +1467,7 @@ packages:
 
   /zod@3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
+    dev: false
 
   /zodiarg@0.2.1(zod@3.21.4):
     resolution: {integrity: sha512-Vbd8aW709iKX0XbMvjYkyjQYDBvWKedaUWNelcNeO1OxVYJ8jqUpj6lRBoO0PtN3b1DM6Ykz+hf9Y8e9pczmLQ==}
@@ -1474,4 +1475,4 @@ packages:
       zod: 3.*
     dependencies:
       zod: 3.21.4
-    dev: true
+    dev: false
