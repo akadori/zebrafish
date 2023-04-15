@@ -1,3 +1,4 @@
+export * from "./plugins";
 import { Zebrafish } from "./core/zebrafish";
 
 import { Plugin } from "./types";
