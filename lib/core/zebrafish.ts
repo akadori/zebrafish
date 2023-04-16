@@ -8,6 +8,7 @@ export class Zebrafish {
     private watcher: chokidar.FSWatcher;
     private ignorePatterns: RegExp[] | undefined;
     private plugins: Plugin[] = [];
+    private cwd = process.cwd();
     
     constructor(entryPoint: string, watchDir: string, ignorePatterns?: RegExp[], plugins?: Plugin[]) {
         this.entryPoint = entryPoint;
@@ -23,7 +24,7 @@ export class Zebrafish {
         this.watcher.on('all', (eventName, path) => {
             if(eventName === 'change') {
                 this.plugins.forEach(plugin => plugin.beforeRestart?.());
-                const onRestarted = this.genealogy?.onFilesChanged(path);
+                const onRestarted = this.genealogy?.onFilesChanged(`${this.cwd}/${path}`);
                 require(this.entryPoint);
                 this.plugins.forEach(plugin => plugin.onRestarted?.());
                 onRestarted?.();
