@@ -1,4 +1,4 @@
-const c = "42adc"
+const c = "ddddfffd";
 console.log(c);
 
 module.exports = {

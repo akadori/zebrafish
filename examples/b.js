@@ -1,7 +1,7 @@
 const { c } = require("./c");
 console.log(`c: ${c} on b.js`);
 
-const b = "42b34"
+const b = "12d345678";
 console.log(b);
 
 module.exports = {

@@ -1,38 +1,114 @@
 import chokidar from 'chokidar';
-
-import { Genealogy } from './genealogy';
-import { Plugin } from '../types';
+import { debugLogger } from '../utils/logger';
+import { Genealogist } from './genealogy';
+import { Plugin } from '../plugins';
+import path from 'path';
 export class Zebrafish {
-    private genealogy: Genealogy | undefined;
-    private entryPoint: string;
-    private watcher: chokidar.FSWatcher;
-    private ignorePatterns: RegExp[] | undefined;
-    private plugins: Plugin[] = [];
-    private cwd = process.cwd();
+    protected genealogist: Genealogist | undefined;
+    protected entryPoint: string;
+    protected watcher: chokidar.FSWatcher;
+    protected ignorePatterns: RegExp[] | undefined;
+    protected plugins: Plugin[] = [];
+    protected cwd = process.cwd();
     
     constructor(entryPoint: string, watchDir: string, ignorePatterns?: RegExp[], plugins?: Plugin[]) {
-        this.entryPoint = entryPoint;
+        const absPath = path.resolve(this.cwd, entryPoint);
+        this.entryPoint = absPath;
         this.ignorePatterns = ignorePatterns;
-        this.watcher = chokidar.watch(watchDir);
+        const absWatchDir = path.resolve(this.cwd, watchDir);
+        this.watcher = chokidar.watch(absWatchDir);
         this.plugins = plugins || [];
         this.plugins.forEach(plugin => plugin.onInit?.());
     }
 
     public start(): void {
         require(this.entryPoint);
-        this.genealogy = new Genealogy(this.entryPoint, this.ignorePatterns);
+        const entryModule = require.cache[require.resolve(this.entryPoint)];
+        if(!entryModule) {
+            throw new Error(`Entry module ${this.entryPoint} not found`);
+        }
+        this.genealogist = Genealogist.wakeUp(entryModule, this.ignorePatterns? { ignorePatterns: this.ignorePatterns } : undefined);
         this.watcher.on('all', (eventName, path) => {
             if(eventName === 'change') {
-                this.plugins.forEach(plugin => plugin.beforeRestart?.());
-                const onRestarted = this.genealogy?.onFilesChanged(`${this.cwd}/${path}`);
-                require(this.entryPoint);
-                this.plugins.forEach(plugin => plugin.onRestarted?.());
-                onRestarted?.();
+                this.handleFileChange(path);
             }
         });
+    }
+
+    public handleFileChange (changedFile: string): void {
+        const ancestorPaths = this.genealogist?.findAncestorsRecursively(require.resolve(changedFile)) || [];
+        // delete cache
+        ancestorPaths.forEach(ancestorPath => {
+            this.deleteCache(ancestorPath);
+        });
+        this.restart();
+        const entryModule = require.cache[require.resolve(this.entryPoint)];
+        if(!entryModule) {
+            throw new Error(`Entry module ${this.entryPoint} not found`);
+        }
+        this.genealogist?.updateGenealogy(entryModule);
+    }
+
+        
+
+    public restart(): void {
+        this.plugins.forEach(plugin => plugin.beforeRestart?.());
+        require(this.entryPoint);
+        this.plugins.forEach(plugin => plugin.onRestarted?.());
     }
     
     public close(): void {
         this.watcher.close();
+    }
+
+    protected deleteCache(modulePath: string): void {
+        require.cache[modulePath] = undefined;
+    }
+}
+
+export class DebugFish extends Zebrafish {
+    private adminServer: any;
+    constructor(entryPoint: string, watchDir: string, ignorePatterns?: RegExp[], plugins?: Plugin[]) {
+        debugLogger("DebugFish constructor")
+        super(entryPoint, watchDir, ignorePatterns, plugins);
+        const readline = require('readline') as typeof import('readline');
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        rl.on('line', this.handleInput.bind(this));
+    }
+
+    handleInput(input: string): void {
+        debugLogger(`DebugFish input: ${input}`)
+        if(input === 's' || input === 'status') {
+            this.printStatus();
+        }
+    }
+
+    private printStatus (): void {
+        debugLogger('DebugFish status');
+        debugLogger("current genealogy: %O", this.genealogist?.currentGenealogy());
+        debugLogger(`entryPoint: ${this.entryPoint}`)
+        debugLogger(`watchDir: ${this.watcher.getWatched()}`)
+    }
+
+    public start(): void {
+        debugLogger('DebugFish start');
+        super.start();
+    }
+
+    public restart(): void {
+        super.restart();
+    }
+
+    public handleFileChange(changedFile: string): void {
+        debugLogger(`DebugFish handleFileChange: ${changedFile}`);
+        super.handleFileChange(changedFile);
+    }
+
+     deleteCache(modulePath: string): void {
+        debugLogger(`DebugFish deleteCache: ${modulePath}`);
+        super.deleteCache(modulePath);
     }
 }

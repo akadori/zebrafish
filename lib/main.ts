@@ -1,7 +1,8 @@
 export * from "./plugins";
-import { Zebrafish } from "./core/zebrafish";
+import { DebugFish } from "./core/zebrafish";
 
-import { Plugin } from "./types";
+import { Plugin } from "./plugins";
+import { serverPlugin } from "./plugins/server";
 
 export type ZebrafishOptions = {
 	  entryPoint: string;
@@ -10,7 +11,7 @@ export type ZebrafishOptions = {
 	  plugins?: Plugin[];
 };
 
-export function createZebrafish(options: ZebrafishOptions): Zebrafish {
-	const zebrafish = new Zebrafish(options.entryPoint, options.watchDir, options.ignorePatterns, options.plugins);
+export function createZebrafish(options: ZebrafishOptions): DebugFish {
+	const zebrafish = new DebugFish(options.entryPoint, options.watchDir, options.ignorePatterns, [serverPlugin]);
 	return zebrafish;
 };

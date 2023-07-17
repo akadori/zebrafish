@@ -1,13 +1,24 @@
-export type GenealogyMap = Map<string, Set<string>>;
+import { debugLogger } from "../utils/logger";
 
-export class Genealogy {
-	private genealogy: Map<string, Set<string>> = new Map;
+/**
+ * ファイルの依存関係を記憶するクラス
+ * 子が親を知っている形で記憶する
+ */
+export class Genealogist {
+	private genealogy: Map<string, Set<string>>;
 	private ignorePatterns: RegExp | undefined;
-	constructor(entryPoint: string, ignorePatterns?: RegExp[]) {
+	constructor(ignorePatterns?: RegExp[]) {
+		this.genealogy = new Map();
 		this.ignorePatterns = ignorePatterns?.length ? new RegExp(ignorePatterns.join("|")) : undefined;
-		this.createReversedDependencyGraph(
-			entryPoint,
-		);
+	}
+
+	public static wakeUp(entryModule: NodeModule, options?: { ignorePatterns?: RegExp[] }): Genealogist {
+		// option の ignorePatterns に設定がない場合、node_modules を無視する
+		// NOTE: "." もしくは "/" から始まるファイルパス以外は無視する
+		const ignorePatterns = options?.ignorePatterns?.length ? options.ignorePatterns : [/node_modules/, /^[^./]/];
+		const genealogist = new Genealogist(ignorePatterns);
+		genealogist.recordAncestorsGraph(entryModule);
+		return genealogist;
 	}
 
 	private recordAncestorsGraph(module: NodeModule, seen: Set<string> = new Set()): void {
@@ -18,9 +29,6 @@ export class Genealogy {
 		seen.add(parent);
 		children.forEach((child) => {
 			const { filename: childFilename } = child;
-			if (this.ignorePatterns?.test(childFilename)) {
-				return;
-			}
 			const ancestors = this.genealogy.get(childFilename) || new Set();
 			ancestors.add(parent);
 			this.genealogy.set(childFilename, ancestors);
@@ -28,66 +36,33 @@ export class Genealogy {
 		});
 	}
 
-	private eraseDescendantsGraph(module: NodeModule, seen: Set<string> = new Set()): void {
-		const { children, filename: parent } = module;
-		if (seen.has(parent)) {
-			return;
-		}
-		seen.add(parent);
-		children.forEach((child) => {
-			const { filename: childFilename } = child;
-			const graph = this.genealogy.get(childFilename);
-			if (graph) {
-				graph.delete(parent);
-			}
-		});
-	}
-
-	private removeAncestorsCache(path: string, seen: Set<string> = new Set()): void {
-		if(seen.has(path)) {
-			return;
-		}
-		seen.add(path);
-		const ancestors = this.genealogy.get(path);
-		if (ancestors) {
-			for (const ancestor of ancestors) {
-				require.cache[ancestor] = undefined;
-				this.removeAncestorsCache(ancestor, seen);
-			}
-		}
-	}
-
-	private createReversedDependencyGraph(
-		entryPoint: string,
-	): void  {
-		const entryModule = require.cache[require.resolve(entryPoint)];
-		if (!entryModule) {
-			throw new Error(`Entry module ${entryPoint} not found`);
-		}
+	/**
+	 * もう一回作り直す。
+	 * ちょっと細かいことは考えずに、とりあえず全部消して作り直す。
+	 */
+	public updateGenealogy(entryModule: NodeModule): void {
+		this.genealogy = new Map();
 		this.recordAncestorsGraph(entryModule);
 	}
-	// キャッシュは祖先方向に、依存関係は子孫方向に削除する
-	public onFilesChanged (changedFile: string): () => void {
-		const changedFilePath = require.resolve(changedFile);
-		const module = require.cache[changedFilePath];
-		if (module) {
-			this.eraseDescendantsGraph(module);
+
+	public findAncestorsRecursively(absolutePath: string, seen: Set<string> = new Set()): string[] {
+		if (seen.has(absolutePath)) {
+			return [];
 		}
-		require.cache[changedFilePath] = undefined;
-		this.removeAncestorsCache(changedFilePath);
+		seen.add(absolutePath);
 
-		// キャッシュを削除した後に再度依存関係を作り直す。もう一回enrtypoint から require する必要があることをクライアントに伝えたいが名前が悪い。
-		return () => {
-			this.updateGenealogy(changedFile);
+		const ancestors = this.genealogy.get(absolutePath);
+		if (!ancestors) {
+			return [absolutePath]
 		}
-	}
 
-	private updateGenealogy (entryPoint: string): void {
-		this.createReversedDependencyGraph(entryPoint);
+		const ancestorsArray = [absolutePath, ...ancestors];
+		const ancestorsOfAncestors = ancestorsArray.flatMap((ancestor) => {
+			return this.findAncestorsRecursively(ancestor, seen);
+		});
+		return [...ancestorsArray, ...ancestorsOfAncestors];
 	}
-
-	public getAncestors (absolutePath: string): string[] {
-		const ancestors = this.genealogy.get(absolutePath) || new Set();
-		return [...ancestors];
+	public currentGenealogy(): typeof this.genealogy {
+		return this.genealogy;
 	}
 }

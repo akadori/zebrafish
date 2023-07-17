@@ -1,17 +1,20 @@
-const Express = require('express');
+const { createServer } = require("node:http");
 
-const app = Express();
-const port = 3000;
+const requiredTime = Date.now();
 
-app.get('/', (req, res) => {
-    res.send('Hello000 Wodrld!d');
+const server = createServer((req, res) => {
+    res.end(JSON.stringify({
+        message: "Server is up and running",
+        serverfileRequiredTime: requiredTime,
+    }));
+});
+const test = "tedsdt3";
+const port = Number(process.env.PORT) || 4000;
+server.listen(port, () => {
+    console.log("Server startded on port:", port);
 });
 
-app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`);
-});
-
-const { c } = require("./c");
-console.log(`c: ${c} on serve.js`);
+// const { c } = require("./c");
+// console.log(`c: ${c} on served.js`);
 const { a } = require("./a");
 console.log(`a: ${a} on serve.js`);

@@ -1,4 +1,4 @@
-import { Plugin } from "../types";
+import { Plugin } from "./interface";
 import http, {
 	Server,
 	ServerOptions,
