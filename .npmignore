@@ -1,8 +1,9 @@
 src/
 node_modules/
 .vscode/
-__tests__/
+test/
 coverage/
 .node-version
 .gitignore
 tsconfig.json
+lib/
