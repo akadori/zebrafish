@@ -1,5 +1,6 @@
 import chokidar from 'chokidar';
 import { debugLogger } from '../utils/logger';
+import { debounce } from '../utils/debounce';
 import { Genealogist } from './genealogy';
 import { Plugin } from '../plugins';
 import path from 'path';
@@ -28,9 +29,10 @@ export class Zebrafish {
             throw new Error(`Entry module ${this.entryPoint} not found`);
         }
         this.genealogist = Genealogist.wakeUp(entryModule, this.ignorePatterns? { ignorePatterns: this.ignorePatterns } : undefined);
+        const debouncedHandleFileChange = debounce(this.handleFileChange.bind(this), 100);
         this.watcher.on('all', (eventName, path) => {
             if(eventName === 'change') {
-                this.handleFileChange(path);
+                debouncedHandleFileChange(path);
             }
         });
     }
@@ -77,6 +79,11 @@ export class DebugFish extends Zebrafish {
             output: process.stdout
         });
         rl.on('line', this.handleInput.bind(this));
+        rl.on('close', () => {
+            this.close();
+            debugLogger('DebugFish close');
+            process.exit(0);
+        });
     }
 
     handleInput(input: string): void {
