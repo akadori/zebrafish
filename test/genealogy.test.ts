@@ -71,9 +71,9 @@ describe("genealogist2", () => {
 	});
     describe("createReversedDependencyGraph", () => {
         it("create reversed dependency graph", () => {
-            const entryPoint = `${tempPath}/a.js`;
-            require(entryPoint);
-            const genealogy = new Genealogy(entryPoint);
+            const entryPath = `${tempPath}/a.js`;
+            require(entryPath);
+            const genealogy = new Genealogy(entryPath);
             const aModule = require.cache[`${tempPath}/a.js`];
             const bModule = require.cache[`${tempPath}/b.js`];
             const cModule = require.cache[`${tempPath}/c.js`];
@@ -96,9 +96,9 @@ describe("genealogist2", () => {
         });
 
         it("create reversed dependency graph without node_modules", () => {
-            const entryPoint = `${tempPath}/a.js`;
-            require(entryPoint);
-            const genealogy = new Genealogy(entryPoint, [
+            const entryPath = `${tempPath}/a.js`;
+            require(entryPath);
+            const genealogy = new Genealogy(entryPath, [
                 /.*node_modules.*/,
             ]);
             const aModule = require.cache[`${tempPath}/a.js`];
@@ -116,9 +116,9 @@ describe("genealogist2", () => {
 
 	describe("onDetectFileChanges", () => {
 		it("remove changed files and their parents from cache", () => {
-			const entryPoint = `${tempPath}/a.js`;
-			require(entryPoint);
-            const genealogy = new Genealogy(entryPoint);
+			const entryPath = `${tempPath}/a.js`;
+			require(entryPath);
+            const genealogy = new Genealogy(entryPath);
 			fs.writeFileSync(
 				`${tempPath}/b.js`,
 				bdotjs.replace("const { c } = require('./c.js');", ""),
@@ -126,7 +126,7 @@ describe("genealogist2", () => {
             const didStart = genealogy.onFilesChanged(
                 `${tempPath}/b.js`,
             )
-            require(entryPoint);
+            require(entryPath);
             didStart();
 			const aModule = require.cache[`${tempPath}/a.js`];
 			const bModule = require.cache[`${tempPath}/b.js`];

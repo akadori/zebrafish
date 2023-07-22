@@ -1,4 +1,4 @@
-import { Plugin } from "./interface";
+import type { Plugin } from "../types";
 import http, {
 	Server,
 	ServerOptions,
@@ -6,7 +6,7 @@ import http, {
 	ServerResponse,
 	RequestListener,
 } from "http";
-import { Socket } from "net";
+import type { Socket } from "net";
 
 const originalCreateServer = http.createServer;
 let sockets: Array<Socket> = [];
@@ -52,14 +52,14 @@ function createEasyToStopServer<
 }
 
 export const serverPlugin: Plugin = {
-    onInit: () => {
-        http.createServer = createEasyToStopServer;
-    },
-    beforeRestart: () => {
-        sockets.forEach((socket) => {
-            socket.destroy();
-        });
-        sockets = [];
-        closeServer?.();
-    }
+	onInit: () => {
+		http.createServer = createEasyToStopServer;
+	},
+	beforeRestart: () => {
+		sockets.forEach((socket) => {
+			socket.destroy();
+		});
+		sockets = [];
+		closeServer?.();
+	},
 };

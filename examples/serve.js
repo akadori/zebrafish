@@ -8,7 +8,7 @@ const server = createServer((req, res) => {
         serverfileRequiredTime: requiredTime,
     }));
 });
-const test = "tedsdt3";
+const test = "teddsdt3";
 const port = Number(process.env.PORT) || 4000;
 server.listen(port, () => {
     console.log("Server startded on port:", port);

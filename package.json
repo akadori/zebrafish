@@ -24,7 +24,7 @@
 	"scripts": {
 		"test": "vitest",
 		"build": "tsc",
-		"run:example": "node ./dist/cli.js -e ./examples/serve.js -w examples",
+		"run:example": "DEBUG=* node ./dist/cli.js -w examples --debug ./examples/serve.js",
 		"dev": "DEBUG=* concurrently --kill-others -i true --raw true  \"npm run build -- --watch\" \"npm run run:example\""
 	},
 	"bin": {
