@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { RunZebrafishOptions, runZebrafish } from "./main";
+import { runZebrafish } from "./main";
 import { z } from "zod";
 import { parse } from "zodiarg";
 import { Plugin } from "./plugins";
@@ -47,7 +47,7 @@ async function excute(input: ParsedInput) {
 	if (input.options.runHttpServer) {
 		plugins.push(serverPlugin);
 	}
-	const zebrafishOptions: RunZebrafishOptions = {
+	const zebrafishOptions = {
 		entryPath: input.args[0],
 		watchDir: input.options.watchDir,
 		ignorePatterns:

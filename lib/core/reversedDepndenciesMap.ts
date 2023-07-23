@@ -1,4 +1,4 @@
-import path from "path";
+import {resolve} from "path";
 
 /**
  * ファイルの依存関係を記憶するクラス
@@ -9,29 +9,19 @@ export class ReversedModulesMap {
 	private entryPath: string;
 	private ignorePatterns: RegExp | undefined;
 	constructor(entryPath: string, ignorePatterns?: RegExp[]) {
-		this.entryPath = path.resolve(process.cwd(), entryPath);
+		this.entryPath = resolve(process.cwd(), entryPath);
 		this.map = new Map();
 		this.ignorePatterns = ignorePatterns?.length
 			? new RegExp(ignorePatterns.join("|"))
-			: undefined;
+			: new RegExp( [/node_modules/, /^[^./]/].join("|"));
 	}
 
-	public static init(
-		entryPath: string,
-		options?: { ignorePatterns?: RegExp[] },
-	): ReversedModulesMap {
-		// option の ignorePatterns に設定がない場合、node_modules を無視する
-		// NOTE: "." もしくは "/" から始まるファイルパス以外は無視する
-		const ignorePatterns = options?.ignorePatterns?.length
-			? options.ignorePatterns
-			: [/node_modules/, /^[^./]/];
-		const genealogist = new ReversedModulesMap(entryPath, ignorePatterns);
-		const entryModule = require.cache[require.resolve(entryPath)];
+	public load(): void {
+		const entryModule = require.cache[require.resolve(this.entryPath)];
 		if (!entryModule) {
-			throw new Error(`Entry module ${entryPath} not found`);
+			throw new Error(`Entry module ${this.entryPath} not found`);
 		}
-		genealogist.recordAncestorsGraph(entryModule);
-		return genealogist;
+		this.recordAncestorsGraph(entryModule);
 	}
 
 	private recordAncestorsGraph(
