@@ -3,15 +3,22 @@ import { ReversedModulesMap } from "./reversedDepndenciesMap";
 import { Plugin } from "../plugins";
 import path from "path";
 import { FSWatcher, watch } from "fs";
-import { verboseLogger } from "../utils/logger";
+import { debugLogger } from "../utils/logger";
 
 class TaskRunner {
+	private watchDirAbsPath: string;
 	private watcher: FSWatcher;
 	private changedFiles: Set<string> = new Set();
 	private changeListener: (changedFiles: Array<string>) => void;
 
-	constructor(watchDir: string, changeListener: (changedFiles: Array<string>) => void) {
-		this.watcher = watch(path.resolve(process.cwd(), watchDir));
+	constructor(
+		watchDir: string,
+		changeListener: (changedFiles: Array<string>) => void,
+	) {
+		this.watchDirAbsPath = path.resolve(process.cwd(), watchDir);
+		this.watcher = watch(this.watchDirAbsPath, {
+			// recursive: true,
+		});
 		this.changeListener = changeListener;
 	}
 
@@ -20,10 +27,12 @@ class TaskRunner {
 			const changedFiles = Array.from(this.changedFiles);
 			this.changeListener(changedFiles);
 			this.changedFiles.clear();
-		}, 500);
-		this.watcher.addListener("change", (_eventType, filename: string) => {
-			this.changedFiles.add(filename);
-			debouncedListener();
+		}, 2000);
+		this.watcher.addListener("change", (eventName, filename: string) => {
+			if (eventName === "change") {
+				this.changedFiles.add(`${this.watchDirAbsPath}/${filename}`);
+				debouncedListener();
+			}
 		});
 	}
 
@@ -55,7 +64,10 @@ export class Zebrafish {
 	}: ZebrafishOptions) {
 		this.entryPath = path.resolve(this.cwd, entryPath);
 		this.ignorePatterns = ignorePatterns;
-		this.taskRunner = new TaskRunner(watchDir, this.handleFileChange.bind(this));
+		this.taskRunner = new TaskRunner(
+			watchDir,
+			this.handleFileChange.bind(this),
+		);
 		this.reversedDepndenciesMap = new ReversedModulesMap(
 			this.entryPath,
 			this.ignorePatterns,
@@ -76,10 +88,13 @@ export class Zebrafish {
 	protected handleFileChange(changedFiles: Array<string>): void {
 		const ancestorPaths = new Set<string>();
 		changedFiles.forEach((changedFile) => {
-			(this.reversedDepndenciesMap.findAncestorsRecursively(
-				require.resolve(changedFile),
-			) || []).forEach((ancestorPath) => ancestorPaths.add(ancestorPath));
+			(
+				this.reversedDepndenciesMap.findAncestorsRecursively(
+					require.resolve(changedFile),
+				) || []
+			).forEach((ancestorPath) => ancestorPaths.add(ancestorPath));
 		});
+		this.deleteCache(Array.from(ancestorPaths));
 		this.restart();
 		this.reversedDepndenciesMap.reload(this.entryPath);
 	}
@@ -94,8 +109,67 @@ export class Zebrafish {
 		this.taskRunner.close();
 	}
 
-	protected deleteCache(modulePath: string): void {
-		require.cache[modulePath] = undefined;
+	protected deleteCache(modulePaths: string[]): void {
+		modulePaths.forEach((modulePath) => {
+			require.cache[modulePath] = undefined;
+		});
 	}
 }
 
+export class ZebrafishForDebug extends Zebrafish {
+	constructor(options: ZebrafishOptions) {
+		super(options);
+		const readline = require("readline") as typeof import("readline");
+		const rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+		});
+		rl.on("line", this.handleInput.bind(this));
+		rl.on("close", () => {
+			this.close();
+			debugLogger("close");
+			process.exit(0);
+		});
+	}
+
+	handleInput(input: string): void {
+		if (input === "s" || input === "status") {
+			this.printStatus();
+		}
+	}
+
+	private printStatus(): void {
+		debugLogger("status");
+		debugLogger(
+			"current map: %O",
+			this.reversedDepndenciesMap.getReversedModulesMap(),
+		);
+		debugLogger(`entryPath: ${this.entryPath}`);
+	}
+
+	public start(): void {
+		debugLogger("start");
+		super.start();
+	}
+
+	public restart(): void {
+		debugLogger("restart");
+		super.restart();
+	}
+
+	public handleFileChange(files: Array<string>): void {
+		debugLogger(`handleFileChange: ${files}`);
+		super.handleFileChange(files);
+	}
+
+	deleteCache(modulePaths: string[]): void {
+		debugLogger(`deleteCache: ${JSON.stringify(modulePaths)}`);
+		super.deleteCache(modulePaths);
+	}
+
+
+	protected runEntryModule(): void {
+		debugLogger(`runEntryModule: ${this.entryPath}`);
+		super.runEntryModule();
+	}
+}

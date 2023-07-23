@@ -1,31 +1,30 @@
 #!/usr/bin/env node
 
 import { runZebrafish } from "./main";
-import { z } from "zod";
+import { z, ZodString } from "zod";
 import { parse } from "zodiarg";
 import { Plugin } from "./plugins";
 import { serverPlugin } from "./plugins/server";
 
+const options = {
+	watchDir: z.string().describe("watch dir"),
+	ignorePatterns: z.array(z.string()).default([]).describe("ignore patterns"),
+	runHttpServer: z
+		.boolean()
+		.default(true)
+		.describe("run http server. default: true"),
+};
+
+const flags = {
+};
+
+const args = [z.string().describe("input entry file path")] as [ZodString];
+
 const parsed = parse(
 	{
-		// --key value | --key=value
-		options: {
-			watchDir: z.string().describe("watch dir"),
-			ignorePatterns: z
-				.array(z.string())
-				.default([])
-				.describe("ignore patterns"),
-			runHttpServer: z
-				.boolean()
-				.default(true)
-				.describe("run http server. default: true"),
-		},
-		// --flagA, --flagB
-		flags: {
-			debug: z.boolean().describe("debug mode"),
-		},
-		args: [z.string().describe("input entry file path")],
-		// alias map: s => shortable
+		options,
+		flags,
+		args,
 		alias: {
 			w: "watchDir",
 			i: "ignorePatterns",
@@ -55,7 +54,7 @@ async function excute(input: ParsedInput) {
 				? input.options.ignorePatterns.map((pattern) => new RegExp(pattern))
 				: undefined,
 		plugins,
-		debug: input.flags.debug,
 	};
 	const zebrafish = runZebrafish(zebrafishOptions);
 }
+

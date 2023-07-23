@@ -1,4 +1,4 @@
-import {resolve} from "path";
+import { resolve } from "path";
 
 /**
  * ファイルの依存関係を記憶するクラス
@@ -13,7 +13,7 @@ export class ReversedModulesMap {
 		this.map = new Map();
 		this.ignorePatterns = ignorePatterns?.length
 			? new RegExp(ignorePatterns.join("|"))
-			: new RegExp( [/node_modules/, /^[^./]/].join("|"));
+			: new RegExp([/node_modules/, /^[^./]/].join("|"));
 	}
 
 	public load(): void {
