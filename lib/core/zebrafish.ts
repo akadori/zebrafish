@@ -3,7 +3,7 @@ import { ReversedModulesMap } from "./reversedDepndenciesMap";
 import { Plugin } from "../plugins";
 import path from "path";
 import { FSWatcher, watch } from "fs";
-import { debugLogger } from "../utils/logger";
+import { debugLogger, infoLogger } from "../utils/logger";
 
 class TaskRunner {
 	private watchDirAbsPath: string;
@@ -17,7 +17,7 @@ class TaskRunner {
 	) {
 		this.watchDirAbsPath = path.resolve(process.cwd(), watchDir);
 		this.watcher = watch(this.watchDirAbsPath, {
-			// recursive: true,
+			recursive: true,
 		});
 		this.changeListener = changeListener;
 	}
@@ -27,7 +27,7 @@ class TaskRunner {
 			const changedFiles = Array.from(this.changedFiles);
 			this.changeListener(changedFiles);
 			this.changedFiles.clear();
-		}, 2000);
+		}, 200);
 		this.watcher.addListener("change", (eventName, filename: string) => {
 			if (eventName === "change") {
 				this.changedFiles.add(`${this.watchDirAbsPath}/${filename}`);
@@ -77,15 +77,20 @@ export class Zebrafish {
 	}
 
 	public start(): void {
+		infoLogger("starting...");
 		this.runEntryModule();
+		this.reversedDepndenciesMap.load();
 		this.taskRunner.start();
 	}
 
 	protected runEntryModule(): void {
+		infoLogger(`runEntryModule: ${this.entryPath}`);
 		require(this.entryPath);
+		infoLogger("runEntryModule done");
 	}
 
 	protected handleFileChange(changedFiles: Array<string>): void {
+		infoLogger(`handleFileChange, ${changedFiles.length} files changed`);
 		const ancestorPaths = new Set<string>();
 		changedFiles.forEach((changedFile) => {
 			(
@@ -95,11 +100,13 @@ export class Zebrafish {
 			).forEach((ancestorPath) => ancestorPaths.add(ancestorPath));
 		});
 		this.deleteCache(Array.from(ancestorPaths));
+		infoLogger(`handleFileChange, ${ancestorPaths.size} modules deleted`);
 		this.restart();
 		this.reversedDepndenciesMap.reload(this.entryPath);
 	}
 
 	protected restart(): void {
+		infoLogger("restarting...");
 		this.plugins.forEach((plugin) => plugin.beforeRestart?.());
 		this.runEntryModule();
 		this.plugins.forEach((plugin) => plugin.onRestarted?.());
@@ -148,17 +155,14 @@ export class ZebrafishForDebug extends Zebrafish {
 	}
 
 	public start(): void {
-		debugLogger("start");
 		super.start();
 	}
 
 	public restart(): void {
-		debugLogger("restart");
 		super.restart();
 	}
 
 	public handleFileChange(files: Array<string>): void {
-		debugLogger(`handleFileChange: ${files}`);
 		super.handleFileChange(files);
 	}
 
@@ -169,7 +173,6 @@ export class ZebrafishForDebug extends Zebrafish {
 
 
 	protected runEntryModule(): void {
-		debugLogger(`runEntryModule: ${this.entryPath}`);
 		super.runEntryModule();
 	}
 }

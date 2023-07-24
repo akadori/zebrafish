@@ -1,7 +1,7 @@
 const { c } = require("./c");
 console.log(`c: ${c} on b.js`);
 
-const b = "123dddd45d67d1drdrr0";
+const b = "sss";
 console.log(b);
 
 module.exports = {

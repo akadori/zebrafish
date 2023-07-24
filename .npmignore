@@ -6,3 +6,5 @@ coverage/
 .gitignore
 tsconfig.json
 lib/
+examples/
+

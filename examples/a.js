@@ -3,7 +3,7 @@ console.log(`c: ${c} on a.js`);
 const { b } = require("./b");
 console.log(`b: ${b} on a.js`);
 
-const a = "142330sse1dd"
+const a = "ssss"
 console.log(a);
 
 module.exports = {

@@ -1,4 +1,6 @@
-const c = "rrr";
+require("./test/foo");
+
+const c = "sss";
 console.log(c);
 
 module.exports = {

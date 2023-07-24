@@ -1,9 +1,8 @@
 {
 	"name": "zebrafish",
-	"version": "0.0.10",
+	"version": "0.1.0",
 	"main": "./dist/main.js",
 	"dependencies": {
-		"debug": "^4.3.4",
 		"zod": "^3.21.4",
 		"zodiarg": "^0.2.1"
 	},
@@ -19,12 +18,13 @@
 		"tsx": "^3.12.6",
 		"typescript": "^5.0.4",
 		"vite": "^4.2.1",
-		"vitest": "^0.29.8"
+		"vitest": "^0.29.8",
+		"debug": "^4.3.4"
 	},
 	"scripts": {
 		"test": "vitest",
-		"build": "tsc",
-		"build:debug:esbuild": "esbuild `find ./lib -name '*.ts'` --outdir=dist --platform=node --define:DEBUG_BUILD=true --format=cjs",
+		"build":  "esbuild ./lib/cli.ts --outfile=dist/cli.js --platform=node --define:DEBUG_BUILD=false --format=cjs --bundle --sourcemap",
+		"build:dev": "esbuild ./lib/cli.ts --outfile=dist/cli.js --platform=node --define:DEBUG_BUILD=true --format=cjs --bundle --sourcemap",
 		"run:example": "DEBUG=* node --enable-source-maps ./dist/cli.js -w examples --debug ./examples/serve.js",
 		"dev": "DEBUG=* concurrently --kill-others -i true --raw true  \"npm run build -- --watch\" \"npm run run:example\""
 	},
