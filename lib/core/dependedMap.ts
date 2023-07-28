@@ -1,10 +1,11 @@
 import { resolve } from "path";
 
 /**
- * ファイルの依存関係を記憶するクラス
- * 子が親を知っている形で記憶する
+ * A map that records the ancestors of each module.
+ * The key is the path of the module, the value is a set of paths of the ancestors.
+ * The ancestors are the modules that import the module.
  */
-export class ReversedModulesMap {
+export class DependedMap {
 	private map: Map<string, Set<string>>;
 	private entryPath: string;
 	private ignorePatterns: RegExp | undefined;
@@ -72,8 +73,5 @@ export class ReversedModulesMap {
 			return this.findAncestorsRecursively(ancestor, seen);
 		});
 		return [...ancestorsArray, ...ancestorsOfAncestors];
-	}
-	public getReversedModulesMap(): Map<string, Set<string>> {
-		return this.map;
 	}
 }

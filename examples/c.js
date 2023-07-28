@@ -1,7 +1,6 @@
 require("./test/foo");
 
-const c = "sss";
-console.log(c);
+const c = "c1s";
 
 module.exports = {
     c

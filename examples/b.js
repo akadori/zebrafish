@@ -1,8 +1,6 @@
 const { c } = require("./c");
-console.log(`c: ${c} on b.js`);
 
-const b = "sss";
-console.log(b);
+const b = `c: ${c} on b.js`;
 
 module.exports = {
     b

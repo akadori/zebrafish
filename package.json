@@ -1,6 +1,6 @@
 {
 	"name": "zebrafish",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"main": "./dist/main.js",
 	"dependencies": {
 		"zod": "^3.21.4",
@@ -23,10 +23,11 @@
 	},
 	"scripts": {
 		"test": "vitest",
-		"build":  "esbuild ./lib/cli.ts --outfile=dist/cli.js --platform=node --define:DEBUG_BUILD=false --format=cjs --bundle --sourcemap",
-		"build:dev": "esbuild ./lib/cli.ts --outfile=dist/cli.js --platform=node --define:DEBUG_BUILD=true --format=cjs --bundle --sourcemap",
-		"run:example": "DEBUG=* node --enable-source-maps ./dist/cli.js -w examples --debug ./examples/serve.js",
-		"dev": "DEBUG=* concurrently --kill-others -i true --raw true  \"npm run build -- --watch\" \"npm run run:example\""
+		"build":  "esbuild $(find ./lib -name '*.ts' -not -name '*.d.ts' -not -name '*.test.ts') --outdir=dist --platform=node --define:DEBUG_BUILD=false --format=cjs",
+		"build:dev": "esbuild ./lib/cli.ts --outfile=dev/cli.js --platform=node --define:DEBUG_BUILD=true --format=cjs --bundle --sourcemap --watch",
+		"run:example": "DEBUG=* node --enable-source-maps ./dist/cli.js -w examples ./examples/serve.js",
+		"run:example:dev": "DEBUG=* node --enable-source-maps ./dev/cli.js -w examples ./examples/serve.js",
+		"dev": "DEBUG=* concurrently --kill-others -i true --raw true  \"npm run build:dev\" \"npm run run:example:dev\""
 	},
 	"bin": {
 		"zf": "./dist/cli.js"
