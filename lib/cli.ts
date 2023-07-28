@@ -1,47 +1,42 @@
 #!/usr/bin/env node
 
 import { runZebrafish } from "./main";
-import { z, ZodString } from "zod";
-import { parse } from "zodiarg";
+import { Command } from "commander";
 import { Plugin } from "./plugins";
 import { serverPlugin } from "./plugins/server";
 
-const options = {
-	watchDir: z.string().describe("watch dir"),
-	ignorePatterns: z.array(z.string()).default([]).describe("ignore patterns"),
-	runHttpServer: z
-		.boolean()
-		.default(true)
-		.describe("run http server. default: true"),
-};
-
-const flags = {
-};
-
-const args = [z.string().describe("input entry file path")] as [ZodString];
-
-const parsed = parse(
-	{
-		options,
-		flags,
-		args,
-		alias: {
-			w: "watchDir",
-			i: "ignorePatterns",
-			s: "runHttpServer",
-		},
-	},
-	process.argv.slice(2),
+const program = new Command();
+program
+	.name("zebrafish")
+	.description("Node.js hot module replacement tool")
+	.version(VERSION);
+program.argument("<entry>", "entry file path");
+program.option("-w, --watch-dir <dir>", "watch dir");
+program.option(
+	"-i, --ignore-patterns <patterns>",
+	"ignore patterns",
+	(v) => v.split(","),
+	[],
 );
+program.option("-s, --run-http-server", "run http server", true);
+program.parse(process.argv);
 
-type ParsedInput = typeof parsed; // Inferenced by Zod
-
-excute(parsed).catch((err) => {
+excute({
+	args: program.args,
+	options: program.opts(),
+}).catch((err) => {
 	console.error(err);
 	process.exit(1);
 });
 
-async function excute(input: ParsedInput) {
+async function excute(input: {
+	args: string[];
+	options: {
+		watchDir: string;
+		ignorePatterns: string[];
+		runHttpServer: boolean;
+	};
+}) {
 	const plugins: Plugin[] = [];
 	if (input.options.runHttpServer) {
 		plugins.push(serverPlugin);
@@ -55,6 +50,5 @@ async function excute(input: ParsedInput) {
 				: undefined,
 		plugins,
 	};
-	const zebrafish = runZebrafish(zebrafishOptions);
+	runZebrafish(zebrafishOptions);
 }
-

@@ -5,7 +5,6 @@ import {
 	ZebrafishOptions,
 } from "./core/zebrafish";
 
-declare const DEBUG_BUILD: boolean;
 
 export function runZebrafish(options: ZebrafishOptions): Zebrafish {
 	const zebrafish = DEBUG_BUILD
