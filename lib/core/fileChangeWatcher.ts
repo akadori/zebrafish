@@ -6,7 +6,7 @@ import path from "path";
  * FileChangeWatcher watches file changes in a directory.
  * It detects file changes and notifies the listener of the changed files.
  * It also debounces the listener execution to prevent multiple executions when a large number of files are changed at once.
- */  
+ */
 export class FileChangeWatcher {
 	private watchDirAbsPath: string;
 	private watcher: FSWatcher;

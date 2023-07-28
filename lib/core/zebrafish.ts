@@ -12,7 +12,7 @@ export type ZebrafishOptions = {
 
 export class Zebrafish {
 	protected entryPath: string;
-	protected dependedMap: DependedMap
+	protected dependedMap: DependedMap;
 	protected fileChangeWatcher: FileChangeWatcher;
 	protected ignorePatterns: RegExp[] | undefined;
 	protected plugins: Plugin[] = [];
@@ -30,10 +30,7 @@ export class Zebrafish {
 			watchDir,
 			this.handleFilesChanged.bind(this),
 		);
-		this.dependedMap = new DependedMap(
-			this.entryPath,
-			this.ignorePatterns,
-		);
+		this.dependedMap = new DependedMap(this.entryPath, this.ignorePatterns);
 		this.plugins = plugins;
 		this.plugins.forEach((plugin) => plugin.onInit?.());
 	}
@@ -106,7 +103,6 @@ export class ZebrafishForDebug extends Zebrafish {
 		debugLogger(`deleteCache: ${JSON.stringify(modulePaths)}`);
 		super.deleteCache(modulePaths);
 	}
-
 
 	protected entry(): void {
 		debugLogger("entry...");

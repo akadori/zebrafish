@@ -8,7 +8,9 @@ import {
 declare const DEBUG_BUILD: boolean;
 
 export function runZebrafish(options: ZebrafishOptions): Zebrafish {
-	const zebrafish = DEBUG_BUILD ? new ZebrafishForDebug(options) : new Zebrafish(options);
+	const zebrafish = DEBUG_BUILD
+		? new ZebrafishForDebug(options)
+		: new Zebrafish(options);
 	zebrafish.start();
 	return zebrafish;
 }
