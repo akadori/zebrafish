@@ -3,6 +3,9 @@ name: 'Static Checks: Lint Check, Type Check'
 on:
   workflow_dispatch:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   static-checks:
