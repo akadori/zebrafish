@@ -24,7 +24,9 @@
 		"run:example": "DEBUG=* node --enable-source-maps ./dist/cli.js -w examples ./examples/serve.js",
 		"run:example:dev": "DEBUG=* node --enable-source-maps ./dev/cli.js -w examples ./examples/serve.js",
 		"dev": "DEBUG=* concurrently --kill-others -i true --raw true  \"npm run build:dev\" \"npm run run:example:dev\"",
-		"format": "rome format --write ./lib"
+		"format": "rome format --write ./lib",
+		"lint": "rome check ./lib",
+		"typecheck": "tsc --noEmit"
 	},
 	"bin": {
 		"zf": "./dist/cli.js"
