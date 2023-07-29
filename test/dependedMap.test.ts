@@ -1,6 +1,6 @@
 import {
-    Genealogy,
-} from "../lib/core/genealogy";
+    DependedMap,
+} from "../lib/core/dependedMap";
 import { expect, describe, it, beforeAll, afterAll } from "vitest";
 import path from "path";
 import fs from "fs";
@@ -73,32 +73,33 @@ describe("genealogist2", () => {
         it("create reversed dependency graph", () => {
             const entryPath = `${tempPath}/a.js`;
             require(entryPath);
-            const genealogy = new Genealogy(entryPath);
+            const dependedMap = new DependedMap(entryPath);
             const aModule = require.cache[`${tempPath}/a.js`];
             const bModule = require.cache[`${tempPath}/b.js`];
             const cModule = require.cache[`${tempPath}/c.js`];
             const dummyModule =
                 require.cache[`${tempPath}/node_modules/dummy/index.js`];
+            dependedMap.load();
 
-            expect(genealogy.getAncestors(aModule?.filename || "")).toHaveLength(0);
-            expect(genealogy.getAncestors(bModule?.filename || "")).toHaveLength(1);
-            expect([...(genealogy.getAncestors(bModule?.filename || "") || [])][0]).toBe(
+            expect(dependedMap.findAncestorsRecursively(aModule?.filename || "")).toHaveLength(0);
+            expect(dependedMap.findAncestorsRecursively(bModule?.filename || "")).toHaveLength(1);
+            expect([...(dependedMap.findAncestorsRecursively(bModule?.filename || "") || [])][0]).toBe(
                 aModule?.filename,
             );
-            expect(genealogy.getAncestors(cModule?.filename || "")).toHaveLength(2);
-            expect([...(genealogy.getAncestors(cModule?.filename || "") || [])]).toContain(
+            expect(dependedMap.findAncestorsRecursively(cModule?.filename || "")).toHaveLength(2);
+            expect([...(dependedMap.findAncestorsRecursively(cModule?.filename || "") || [])]).toContain(
                 aModule?.filename,
             );
-            expect([...(genealogy.getAncestors(cModule?.filename || "") || [])]).toContain(
+            expect([...(dependedMap.findAncestorsRecursively(cModule?.filename || "") || [])]).toContain(
                 bModule?.filename,
             );
-            expect(genealogy.getAncestors(dummyModule?.filename || "")).toHaveLength(1);
+            expect(dependedMap.findAncestorsRecursively(dummyModule?.filename || "")).toHaveLength(1);
         });
 
         it("create reversed dependency graph without node_modules", () => {
             const entryPath = `${tempPath}/a.js`;
             require(entryPath);
-            const genealogy = new Genealogy(entryPath, [
+            const dependedMap = new DependedMap(entryPath, [
                 /.*node_modules.*/,
             ]);
             const aModule = require.cache[`${tempPath}/a.js`];
@@ -107,10 +108,10 @@ describe("genealogist2", () => {
             const dummyModule =
                 require.cache[`${tempPath}/node_modules/dummy/index.js`];
 
-            expect(genealogy.getAncestors(aModule?.filename || "")).toHaveLength(0);
-            expect(genealogy.getAncestors(bModule?.filename || "")).toHaveLength(1);
-            expect(genealogy.getAncestors(cModule?.filename || "")).toHaveLength(2);
-            expect(genealogy.getAncestors(dummyModule?.filename || "")).toHaveLength(0);
+            expect(dependedMap.findAncestorsRecursively(aModule?.filename || "")).toHaveLength(0);
+            expect(dependedMap.findAncestorsRecursively(bModule?.filename || "")).toHaveLength(1);
+            expect(dependedMap.findAncestorsRecursively(cModule?.filename || "")).toHaveLength(2);
+            expect(dependedMap.findAncestorsRecursively(dummyModule?.filename || "")).toHaveLength(0);
         });
     });
 
@@ -118,16 +119,15 @@ describe("genealogist2", () => {
 		it("remove changed files and their parents from cache", () => {
 			const entryPath = `${tempPath}/a.js`;
 			require(entryPath);
-            const genealogy = new Genealogy(entryPath);
+            const dependedMap = new DependedMap(entryPath);
 			fs.writeFileSync(
 				`${tempPath}/b.js`,
 				bdotjs.replace("const { c } = require('./c.js');", ""),
 			);
-            const didStart = genealogy.onFilesChanged(
+            dependedMap.reload(
                 `${tempPath}/b.js`,
             )
             require(entryPath);
-            didStart();
 			const aModule = require.cache[`${tempPath}/a.js`];
 			const bModule = require.cache[`${tempPath}/b.js`];
 			const cModule = require.cache[`${tempPath}/c.js`];
@@ -135,16 +135,16 @@ describe("genealogist2", () => {
 				require.cache[`${tempPath}/node_modules/dummy/index.js`];
 
 
-            expect(genealogy.getAncestors(aModule?.filename || "")).toHaveLength(0);
-            expect(genealogy.getAncestors(bModule?.filename || "")).toHaveLength(1);
-            expect([...(genealogy.getAncestors(bModule?.filename || "") || [])][0]).toBe(
+            expect(dependedMap.findAncestorsRecursively(aModule?.filename || "")).toHaveLength(0);
+            expect(dependedMap.findAncestorsRecursively(bModule?.filename || "")).toHaveLength(1);
+            expect([...(dependedMap.findAncestorsRecursively(bModule?.filename || "") || [])][0]).toBe(
                 aModule?.filename,
             );
-            expect(genealogy.getAncestors(cModule?.filename || "")).toHaveLength(1);
-            expect([...(genealogy.getAncestors(cModule?.filename || "") || [])]).toContain(
+            expect(dependedMap.findAncestorsRecursively(cModule?.filename || "")).toHaveLength(1);
+            expect([...(dependedMap.findAncestorsRecursively(cModule?.filename || "") || [])]).toContain(
                 aModule?.filename,
             );
-            expect(genealogy.getAncestors(dummyModule?.filename || "")).toHaveLength(1);
+            expect(dependedMap.findAncestorsRecursively(dummyModule?.filename || "")).toHaveLength(1);
 		});
 	});
 });

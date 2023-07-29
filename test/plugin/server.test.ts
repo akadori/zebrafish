@@ -14,7 +14,7 @@ describe("startServer", () => {
             const port = "3000";
             process.env.PORT = port;
             serverPlugin.onInit?.();
-            await require("../../examples/server.js");
+            await require("../../examples/serve.js");
             const res = (await (await fetch(`http://localhost:${port}`)).json()) as {
                 message: string;
                 serverfileRequiredTime: number;
@@ -32,7 +32,7 @@ describe("restartServer", () => {
         try {
             const port = "3000";
             serverPlugin.onInit?.();
-            await require("../../examples/server.js");
+            await require("../../examples/serve.js");
             const res1 = (await (await fetch(`http://localhost:${port}`)).json()) as {
                 message: string;
                 serverfileRequiredTime: number;
@@ -41,7 +41,7 @@ describe("restartServer", () => {
             const path = require.resolve("../../examples/server.js");
             require.cache[path] = undefined;
             serverPlugin.beforeRestart?.();
-            await require("../../examples/server.js");
+            await require("../../examples/serve.js");
             const res2 = (await (await fetch(`http://localhost:${port}`)).json()) as {
                 message: string;
                 serverfileRequiredTime: number;
