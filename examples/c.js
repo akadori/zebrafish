@@ -1,6 +1,6 @@
 require("./test/foo");
 
-const c = "c1s";
+const c = "sc1ssss";
 
 module.exports = {
     c
