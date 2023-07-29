@@ -1,4 +1,4 @@
-name: 'Static Checks: Lint Check, Type Check'
+name: 'Test'
 
 on:
   workflow_dispatch:
@@ -23,7 +23,5 @@ jobs:
           cache: pnpm
       - name: Install
         run: pnpm install
-      - name: Lint
-        run: pnpm lint
-      - name: Type check
-        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
