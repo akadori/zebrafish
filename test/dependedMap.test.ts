@@ -5,72 +5,28 @@ import { expect, describe, it, beforeAll, afterAll } from "vitest";
 import path from "path";
 import fs from "fs";
 
-const dummyNodeModuleIndex = `
-    const dummy = 4;
-    exports.dummy = dummy;
-`;
-
-const dummyPackageJson = `
-    {
-        "name": "dummy",
-        "main": "index.js"
-    }
-`;
-
-const cdotjs = `
-    const dummy = require('dummy');
-    const resolved = require.resolve('dummy');
-    const c= 1;
-    module.exports = {
-      resolvedDummyModulePath: resolved,
-      c,
-    };
-`;
-
-const bdotjs = `
-    const { c } = require('./c.js');
-    const b = 2;
-    exports.b = b;
-`;
-
-const adotjs = `
-    const { b } = require('./b.js');
-    const { c, resolvedDummyModulePath } = require('./c.js');
-    const a = 3;
-    module.exports = {
-      a,
-      resolvedDummyModulePath,
-    }
-`;
-
+const dataPath = path.join(__dirname, "data");
 const tempPath = path.join(__dirname, "temp");
 
-describe("genealogist2", () => {
+describe("dependentMap", () => {
 	beforeAll(() => {
 		if (fs.existsSync(tempPath)) {
 			fs.rmSync(tempPath, { recursive: true, force: true });
 		}
-		fs.mkdirSync(tempPath);
-		fs.writeFileSync(`${tempPath}/c.js`, cdotjs);
-		fs.writeFileSync(`${tempPath}/b.js`, bdotjs);
-		fs.writeFileSync(`${tempPath}/a.js`, adotjs);
-
-		fs.mkdirSync(`${tempPath}/node_modules`);
-		fs.mkdirSync(`${tempPath}/node_modules/dummy`);
-		fs.writeFileSync(
-			`${tempPath}/node_modules/dummy/index.js`,
-			dummyNodeModuleIndex,
-		);
-		fs.writeFileSync(
-			`${tempPath}/node_modules/dummy/package.json`,
-			dummyPackageJson,
-		);
+        fs.mkdirSync(tempPath);
+        fs.copyFileSync(`${dataPath}/a.js`, `${tempPath}/a.js`);
+        fs.copyFileSync(`${dataPath}/b.js`, `${tempPath}/b.js`);
+        fs.copyFileSync(`${dataPath}/c.js`, `${tempPath}/c.js`);
+        fs.mkdirSync(`${tempPath}/node_modules`);
+        fs.mkdirSync(`${tempPath}/node_modules/dummy`);
+        fs.copyFileSync(`${dataPath}/node_modules/dummy/index.js`, `${tempPath}/node_modules/dummy/index.js`);
+        fs.copyFileSync(`${dataPath}/node_modules/dummy/package.json`, `${tempPath}/node_modules/dummy/package.json`);
 	});
 	afterAll(() => {
 		fs.rmSync(tempPath, { recursive: true, force: true });
 	});
-    describe("createReversedDependencyGraph", () => {
-        it("create reversed dependency graph", () => {
+    describe("load", () => {
+        it("create dependency graph", () => {
             const entryPath = `${tempPath}/a.js`;
             require(entryPath);
             const dependedMap = new DependedMap(entryPath);
@@ -80,7 +36,8 @@ describe("genealogist2", () => {
             const dummyModule =
                 require.cache[`${tempPath}/node_modules/dummy/index.js`];
             dependedMap.load();
-
+            console.log(`aModule?.filename: ${aModule?.filename}`)
+            console.debug(`dependedMap.findAncestorsRecursively(aModule?.filename || ""): ${[...dependedMap.findAncestorsRecursively(aModule?.filename || "")]}`)
             expect(dependedMap.findAncestorsRecursively(aModule?.filename || "")).toHaveLength(0);
             expect(dependedMap.findAncestorsRecursively(bModule?.filename || "")).toHaveLength(1);
             expect([...(dependedMap.findAncestorsRecursively(bModule?.filename || "") || [])][0]).toBe(
