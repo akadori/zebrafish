@@ -12,10 +12,34 @@ export type ZebrafishOptions = {
     plugins: Plugin[];
 };
 
+class Wacher {
+    watchDir: string;
+    handler: (path: string) => void;
+
+    constructor(watchDir: string, handler: (path: string) => void) {
+        this.watchDir = watchDir;
+        this.handler = handler;
+    }
+
+    public start(): void {
+        const watcher = chokidar.watch(this.watchDir);
+        watcher.on('all', (eventName, path) => {
+            if(eventName === 'change') {
+                debugLogger(`File ${path} has been changed`);
+                this.handler(path);
+            }
+        });
+    }
+
+    public close(): void {
+        console.log('close watcher');
+    }
+}
+
 export class Zebrafish {
     protected dependedMap: DependedMap;
     protected entryPoint: string;
-    protected watcher: chokidar.FSWatcher;
+    protected watcher: Wacher;
     protected ignorePatterns: RegExp[] | undefined;
     protected plugins: Plugin[] = [];
     protected cwd = process.cwd();
@@ -30,7 +54,7 @@ export class Zebrafish {
         this.entryPoint = absPath;
         this.ignorePatterns = ignorePatterns;
         const absWatchDir = path.resolve(this.cwd, watchDir);
-        this.watcher = chokidar.watch(absWatchDir);
+        this.watcher = new Wacher(absWatchDir, this.handleFileChange.bind(this));
         this.plugins = plugins || [];
         this.plugins.forEach(plugin => plugin.onInit?.());
         this.dependedMap = new DependedMap(absPath, ignorePatterns);
@@ -45,11 +69,7 @@ export class Zebrafish {
         }
         this.dependedMap.load();
         const debouncedHandleFileChange = debounce(this.handleFileChange.bind(this), 100);
-        this.watcher.on('all', (eventName, path) => {
-            if(eventName === 'change') {
-                debouncedHandleFileChange(path);
-            }
-        });
+        this.watcher.start();
     }
 
 	protected entry(): void {
@@ -109,7 +129,6 @@ export class ZebrafishForDebug extends Zebrafish {
     }
 
      deleteCache(modulePath: string): void {
-        debugLogger(`ZebrafishForDebug deleteCache: ${modulePath}`);
         super.deleteCache(modulePath);
     }
 }
