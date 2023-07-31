@@ -52,14 +52,14 @@ function createEasyToStopServer<
 }
 
 export const serverPlugin: Plugin = {
-    onInit: () => {
-        http.createServer = createEasyToStopServer;
-    },
-    beforeRestart: () => {
-        sockets.forEach((socket) => {
-            socket.destroy();
-        });
-        sockets = [];
-        closeServer?.();
-    }
+	onInit: () => {
+		http.createServer = createEasyToStopServer;
+	},
+	beforeRestart: () => {
+		sockets.forEach((socket) => {
+			socket.destroy();
+		});
+		sockets = [];
+		closeServer?.();
+	},
 };

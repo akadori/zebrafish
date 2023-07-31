@@ -176,7 +176,8 @@ export class DependedMap2 {
 		}
 		this.map = new EdgeFlippedNodeMap(
 			"filename",
-			"children",entryModule,
+			"children",
+			entryModule,
 			new RegExp([/node_modules/, /^[^./]/].join("|")),
 		);
 	}
