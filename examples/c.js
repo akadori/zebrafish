@@ -1,5 +1,6 @@
-const c = "dddddfffd";
-console.log(c);
+require("./test/foo");
+
+const c = "sc1ssss";
 
 module.exports = {
     c

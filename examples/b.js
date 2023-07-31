@@ -1,9 +1,9 @@
 const { c } = require("./c");
-console.log(`c: ${c} on b.js`);
 
-const b = "12d345678";
-console.log(b);
+const b = `c: ${c} on b.js`;
 
 module.exports = {
     b
 };
+
+const j = 123;

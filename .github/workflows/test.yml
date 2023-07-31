@@ -1,0 +1,27 @@
+name: 'Test'
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  static-checks:
+    runs-on: ${{ fromJSON('["ubuntu-latest", "self-hosted"]')[github.repository == 'github/docs-internal'] }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8.0.0
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: pnpm
+      - name: Install
+        run: pnpm install
+      - name: Test
+        run: pnpm test
