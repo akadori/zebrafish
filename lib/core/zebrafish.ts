@@ -5,6 +5,13 @@ import { Genealogist } from './genealogy';
 import { Plugin } from '../plugins';
 import path from 'path';
 
+export type ZebrafishOptions = {
+    entryPoint: string;
+    watchDir: string;
+    ignorePatterns?: RegExp[];
+    plugins: Plugin[];
+};
+
 export class Zebrafish {
     protected genealogist: Genealogist | undefined;
     protected entryPoint: string;
@@ -13,7 +20,12 @@ export class Zebrafish {
     protected plugins: Plugin[] = [];
     protected cwd = process.cwd();
     
-    constructor(entryPoint: string, watchDir: string, ignorePatterns?: RegExp[], plugins?: Plugin[]) {
+    constructor({
+        entryPoint,
+        watchDir,
+        ignorePatterns,
+        plugins,
+    } : ZebrafishOptions ) {
         const absPath = path.resolve(this.cwd, entryPoint);
         this.entryPoint = absPath;
         this.ignorePatterns = ignorePatterns;
@@ -76,14 +88,13 @@ export class Zebrafish {
     }
 }
 
-export class DebugFish extends Zebrafish {
-    private adminServer: any;
-    constructor(entryPoint: string, watchDir: string, ignorePatterns?: RegExp[], plugins?: Plugin[]) {
-        debugLogger("DebugFish constructor")
-        super(entryPoint, watchDir, ignorePatterns, plugins);
+export class ZebrafishForDebug extends Zebrafish {
+    constructor(options: ZebrafishOptions) {
+        debugLogger("ZebrafishForDebug constructor")
+        super(options);
     }
     public start(): void {
-        debugLogger('DebugFish start');
+        debugLogger('ZebrafishForDebug start');
         super.start();
     }
 
@@ -92,12 +103,12 @@ export class DebugFish extends Zebrafish {
     }
 
     public handleFileChange(changedFile: string): void {
-        debugLogger(`DebugFish handleFileChange: ${changedFile}`);
+        debugLogger(`ZebrafishForDebug handleFileChange: ${changedFile}`);
         super.handleFileChange(changedFile);
     }
 
      deleteCache(modulePath: string): void {
-        debugLogger(`DebugFish deleteCache: ${modulePath}`);
+        debugLogger(`ZebrafishForDebug deleteCache: ${modulePath}`);
         super.deleteCache(modulePath);
     }
 }

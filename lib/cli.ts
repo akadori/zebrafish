@@ -1,46 +1,54 @@
 #!/usr/bin/env node
 
-import { ZebrafishOptions,createZebrafish } from "./main";
-import { z } from "zod";
-import { parse } from "zodiarg";
+import { runZebrafish } from "./main";
+import { Command } from "commander";
+import { Plugin } from "./plugins";
+import { serverPlugin } from "./plugins/server";
 
-const parsed = parse(
-  {
-    // --key value | --key=value
-    options: {
-      entryPoint: z.string().describe("entry point"),
-      watchDir: z.string().describe("watch dir"),
-      ignorePatterns: z.array(z.string()).default([]).describe("ignore patterns"),
-    },
-    // --flagA, --flagB
-    flags: {
-    },
-    // ... positional args: miz 10
-    args: [
-    ],
-    // alias map: s => shortable
-    alias: {
-      e: 'entryPoint',
-      w: 'watchDir',
-      i: 'ignorePatterns',
-    }
-  },
-  process.argv.slice(2),
+const program = new Command();
+program
+	.name("zebrafish")
+	.description("Node.js hot module replacement tool")
+	.version(VERSION);
+program.argument("<entry>", "entry file path");
+program.option("-w, --watch-dir <dir>", "watch dir");
+program.option(
+	"-i, --ignore-patterns <patterns>",
+	"ignore patterns",
+	(v) => v.split(","),
+	[],
 );
+program.option("-s, --run-http-server", "run http server", true);
+program.parse(process.argv);
 
-type ParsedInput = typeof parsed; // Inferenced by Zod
-
-excute(parsed).catch((err) => {
-  console.error(err);
-  process.exit(1);
+excute({
+	args: program.args,
+	options: program.opts(),
+}).catch((err) => {
+	console.error(err);
+	process.exit(1);
 });
 
-async function excute(input: ParsedInput) {
-    const zebrafishOptions: ZebrafishOptions = {
-        entryPoint: input.options.entryPoint,
-        watchDir: input.options.watchDir,
-        ignorePatterns: input.options.ignorePatterns.length > 0 ? input.options.ignorePatterns.map((pattern) => new RegExp(pattern)) : undefined,
-    };
-    const zebrafish = createZebrafish(zebrafishOptions);
-    zebrafish.start();
+async function excute(input: {
+	args: string[];
+	options: {
+		watchDir: string;
+		ignorePatterns: string[];
+		runHttpServer: boolean;
+	};
+}) {
+	const plugins: Plugin[] = [];
+	if (input.options.runHttpServer) {
+		plugins.push(serverPlugin);
+	}
+	const zebrafishOptions = {
+		entryPoint: input.args[0],
+		watchDir: input.options.watchDir,
+		ignorePatterns:
+			input.options.ignorePatterns.length > 0
+				? input.options.ignorePatterns.map((pattern) => new RegExp(pattern))
+				: undefined,
+		plugins,
+	};
+	runZebrafish(zebrafishOptions);
 }
