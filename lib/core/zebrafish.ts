@@ -2,7 +2,7 @@ import chokidar from 'chokidar';
 import { debugLogger, infoLogger } from '../utils/logger';
 import { debounce } from '../utils/debounce';
 import { DependedMap } from './dependedMap';
-import { Plugin } from '../plugins';
+import { Plugin } from '../types';
 import path from 'path';
 
 export type ZebrafishOptions = {
