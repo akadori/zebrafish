@@ -2,7 +2,7 @@
 
 import { runZebrafish } from "./main";
 import { Command } from "commander";
-import { Plugin } from "./plugins";
+import { Plugin } from "./types";
 import { serverPlugin } from "./plugins/server";
 
 const program = new Command();
