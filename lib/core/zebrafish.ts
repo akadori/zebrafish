@@ -1,7 +1,7 @@
 import chokidar from 'chokidar';
 import { debugLogger, infoLogger } from '../utils/logger';
 import { debounce } from '../utils/debounce';
-import { Genealogist } from './genealogy';
+import { DependedMap } from './dependedMap';
 import { Plugin } from '../plugins';
 import path from 'path';
 
@@ -13,7 +13,7 @@ export type ZebrafishOptions = {
 };
 
 export class Zebrafish {
-    protected genealogist: Genealogist | undefined;
+    protected dependedMap: DependedMap;
     protected entryPoint: string;
     protected watcher: chokidar.FSWatcher;
     protected ignorePatterns: RegExp[] | undefined;
@@ -33,6 +33,7 @@ export class Zebrafish {
         this.watcher = chokidar.watch(absWatchDir);
         this.plugins = plugins || [];
         this.plugins.forEach(plugin => plugin.onInit?.());
+        this.dependedMap = new DependedMap(absPath, ignorePatterns);
     }
 
     public start(): void {
@@ -42,7 +43,7 @@ export class Zebrafish {
         if(!entryModule) {
             throw new Error(`Entry module ${this.entryPoint} not found`);
         }
-        this.genealogist = Genealogist.wakeUp(entryModule, this.ignorePatterns? { ignorePatterns: this.ignorePatterns } : undefined);
+        this.dependedMap.load();
         const debouncedHandleFileChange = debounce(this.handleFileChange.bind(this), 100);
         this.watcher.on('all', (eventName, path) => {
             if(eventName === 'change') {
@@ -56,7 +57,7 @@ export class Zebrafish {
 	}
 
     public handleFileChange (changedFile: string): void {
-        const ancestorPaths = this.genealogist?.findAncestorsRecursively(require.resolve(changedFile)) || [];
+        const ancestorPaths = this.dependedMap?.findAncestorsRecursively(require.resolve(changedFile)) || [];
         // delete cache
         ancestorPaths.forEach(ancestorPath => {
             this.deleteCache(ancestorPath);
@@ -66,7 +67,7 @@ export class Zebrafish {
         if(!entryModule) {
             throw new Error(`Entry module ${this.entryPoint} not found`);
         }
-        this.genealogist?.updateGenealogy(entryModule);
+        this.dependedMap.reload(this.entryPoint);
     }
 
         

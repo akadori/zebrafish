@@ -1,6 +1,6 @@
 {
 	"name": "zebrafish",
-	"version": "0.0.10",
+	"version": "0.2.10",
 	"main": "./dist/main.js",
 	"dependencies": {
 		"chokidar": "^3.5.3",
@@ -22,7 +22,7 @@
 	"scripts": {
 		"test": "vitest",
 		"build": "esbuild $(find ./lib -name '*.ts' -not -name '*.d.ts' -not -name '*.test.ts') --outdir=dist --platform=node --format=cjs --define:VERSION=\"'$npm_package_version'\" --define:DEBUG_BUILD=false",
-		"build:dev": "esbuild $(find ./lib -name '*.ts' -not -name '*.d.ts' -not -name '*.test.ts') --outdir=dist --platform=node --format=cjs --define:DEBUG_BUILD=true --define:VERSION=\"'dev'\"",
+		"build:dev": "esbuild $(find ./lib -name '*.ts' -not -name '*.d.ts' -not -name '*.test.ts') --outdir=dist --platform=node --format=cjs --define:DEBUG_BUILD=true --define:VERSION=\"'$npm_package_version:dev'\"",
 		"build:dev:watch": "esbuild $(find ./lib -name '*.ts' -not -name '*.d.ts' -not -name '*.test.ts') --outdir=dist --platform=node --format=cjs --define:DEBUG_BUILD=true --define:VERSION=\"'dev'\" --watch",
 		"run:example": "DEBUG=* node --enable-source-maps ./dist/cli.js -w examples ./examples/serve.js",
 		"run:example:dev": "DEBUG=* node --enable-source-maps ./dist/cli.js -w examples ./examples/serve.js",
