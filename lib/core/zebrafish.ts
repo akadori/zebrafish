@@ -23,10 +23,11 @@ class Wacher {
 
     public start(): void {
         const watcher = chokidar.watch(this.watchDir);
+        const debounceHandler = debounce(this.handler, 100);
         watcher.on('all', (eventName, path) => {
             if(eventName === 'change') {
                 debugLogger(`File ${path} has been changed`);
-                this.handler(path);
+                debounceHandler(path);
             }
         });
     }
@@ -54,8 +55,7 @@ export class Zebrafish {
         this.entryPoint = absPath;
         this.ignorePatterns = ignorePatterns;
         const absWatchDir = path.resolve(this.cwd, watchDir);
-        const debouncedHandleFileChange = debounce(this.handleFileChange.bind(this), 100);
-        this.watcher = new Wacher(absWatchDir, debouncedHandleFileChange);
+        this.watcher = new Wacher(absWatchDir, this.handleFileChange.bind(this));
         this.plugins = plugins || [];
         this.plugins.forEach(plugin => plugin.onInit?.());
         this.dependedMap = new DependedMap(absPath, ignorePatterns);
