@@ -54,7 +54,8 @@ export class Zebrafish {
         this.entryPoint = absPath;
         this.ignorePatterns = ignorePatterns;
         const absWatchDir = path.resolve(this.cwd, watchDir);
-        this.watcher = new Wacher(absWatchDir, this.handleFileChange.bind(this));
+        const debouncedHandleFileChange = debounce(this.handleFileChange.bind(this), 100);
+        this.watcher = new Wacher(absWatchDir, debouncedHandleFileChange);
         this.plugins = plugins || [];
         this.plugins.forEach(plugin => plugin.onInit?.());
         this.dependedMap = new DependedMap(absPath, ignorePatterns);
@@ -68,7 +69,6 @@ export class Zebrafish {
             throw new Error(`Entry module ${this.entryPoint} not found`);
         }
         this.dependedMap.load();
-        const debouncedHandleFileChange = debounce(this.handleFileChange.bind(this), 100);
         this.watcher.start();
     }
 
