@@ -15,55 +15,29 @@ export type ZebrafishOptions = {
 class FileChangeWatcher {
 	watchDir: string;
 	queue: string[] = [];
-	lisner: (path: string) => void;
-	batch: (paths: string[]) => void;
+	delayedListener: (paths: string[]) => void;
 
-	constructor(
-		watchDir: string,
-		// lisner: (path: string) => void,
-		batch: (paths: string[]) => void,
-	) {
+	constructor(watchDir: string, delayedListener: (paths: string[]) => void) {
 		this.watchDir = watchDir;
-		// this.lisner = lisner;
-		this.batch = batch;
+		this.delayedListener = delayedListener;
 	}
 
 	public start(): void {
 		const watcher = chokidar.watch(this.watchDir, {
-            // ignore all files and directories except javascript files
-            ignored: /^(?!.*js$).+$/
-        });
-		const debounceHandler = debounce(this.lisner, 100);
+			// TODO:
+			// ignore all files and directories except javascript files
+			// ignored: /^(?!.*js$).+$/ <- it's not working
+		});
 		const debounceBatchHandler = debounce(() => {
-			this.batch(this.queue);
+			this.delayedListener(this.queue);
 			this.queue = [];
 		}, 100);
-		// watcher.on("all", (eventName, path) => {
-		// 	if (eventName === "change") {
-		// 		debugLogger(`File ${path} has been changed`);
-		// 		debounceHandler(path);
-		// 	}
-		// });
-		watcher.on("all", (eventName, path) => {
-			if (eventName === "add") {
-				debugLogger(`File ${path} has been added`);
-				this.queue.push(path);
-			} else if (eventName === "unlink") {
-				debugLogger(`File ${path} has been removed`);
-				this.queue.push(path);
-			} else if (eventName === "unlinkDir") {
-				debugLogger(`Directory ${path} has been removed`);
-				this.queue.push(path);
-			} else if (eventName === "addDir") {
-				debugLogger(`Directory ${path} has been added`);
-				this.queue.push(path);
-				debugLogger(`Watcher closed: ${path}`);
-			} else if (eventName === "change") {
+		watcher.on("change", (path) => {
+			// TODO: set in constructor what files to watch. or set in watch ignore patterns
+			if (path.endsWith(".js")) {
 				this.queue.push(path);
 				debounceBatchHandler();
-			} else {
-                debugLogger(`Watcher event: ${eventName} ${path}`);
-            }
+			}
 		});
 	}
 
@@ -92,7 +66,7 @@ export class Zebrafish {
 		const absWatchDir = path.resolve(this.cwd, watchDir);
 		this.watcher = new FileChangeWatcher(
 			absWatchDir,
-            this.handleFilesChanged.bind(this),
+			this.handleFilesChanged.bind(this),
 		);
 		this.plugins = plugins || [];
 		this.plugins.forEach((plugin) => plugin.onInit?.());
@@ -108,18 +82,23 @@ export class Zebrafish {
 		}
 		this.dependedMap.load();
 		this.watcher.start();
-        launchLogger("started");
+		launchLogger("started");
 	}
 
 	protected entry(): void {
 		require(this.entryPoint);
 	}
 
-	public handleFileChange(changedFile: string): void {
-		const ancestorPaths =
-			this.dependedMap?.findAncestorsRecursively(
-				require.resolve(changedFile),
-			) || [];
+	public handleFilesChanged(changedFiles: string[]): void {
+		const ancestorPaths = changedFiles
+			.map((changedFile) => {
+				return (
+					this.dependedMap?.findAncestorsRecursively(
+						require.resolve(changedFile),
+					) || []
+				);
+			})
+			.flat();
 		// delete cache
 		ancestorPaths.forEach((ancestorPath) => {
 			this.deleteCache(ancestorPath);
@@ -131,24 +110,6 @@ export class Zebrafish {
 		}
 		this.dependedMap.reload(this.entryPoint);
 	}
-
-    public handleFilesChanged(changedFiles: string[]): void {
-        const ancestorPaths = changedFiles.map((changedFile) => {
-            return this.dependedMap?.findAncestorsRecursively(
-                require.resolve(changedFile),
-            ) || [];
-        }).flat();
-        // delete cache
-        ancestorPaths.forEach((ancestorPath) => {
-            this.deleteCache(ancestorPath);
-        });
-        this.restart();
-        const entryModule = require.cache[require.resolve(this.entryPoint)];
-        if (!entryModule) {
-            throw new Error(`Entry module ${this.entryPoint} not found`);
-        }
-        this.dependedMap.reload(this.entryPoint);
-    }
 
 	public restart(): void {
 		infoLogger("restarting...");
@@ -182,9 +143,9 @@ export class ZebrafishForDebug extends Zebrafish {
 		super.restart();
 	}
 
-	public handleFileChange(changedFile: string): void {
-		debugLogger(`ZebrafishForDebug handleFileChange: ${changedFile}`);
-		super.handleFileChange(changedFile);
+	public handleFilesChanged(changedFiles: string[]): void {
+		debugLogger(`ZebrafishForDebug handleFilesChanged: ${changedFiles.length}`);
+		super.handleFilesChanged(changedFiles);
 	}
 
 	deleteCache(modulePath: string): void {
