@@ -1,6 +1,6 @@
 {
 	"name": "zebrafish",
-	"version": "0.2.11",
+	"version": "0.2.12",
 	"main": "./dist/main.js",
 	"dependencies": {
 		"chokidar": "^3.5.3",
